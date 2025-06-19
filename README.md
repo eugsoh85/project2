@@ -333,6 +333,7 @@ run_dbt_staging → run_dbt_tests → run_dbt_marts
 - Failed tests stop the pipeline execution
 - Comprehensive logging for debugging
 
+
 ## Running the Complete Pipeline
 
 ### Option 1: Manual Execution
@@ -347,7 +348,11 @@ dbt run --select path:models/staging/
 dbt test --select path:models/staging/
 dbt run --select path:models/marts/
 
-# 3. Run analysis
+# 3. Refresh BI dashboards
+https://lookerstudio.google.com/reporting/6bc1d14d-ad4d-4c80-8fdb-4185c7009335
+https://lookerstudio.google.com/reporting/d4ae5458-656c-4df2-8329-34a251bea08e
+
+# 4. Run analysis
 cd ../notebooks
 jupyter notebook clv_analysis.ipynb
 ```
