@@ -1,0 +1,95 @@
+version: 2
+
+models:
+  - name: customer_demographics_summary
+    description: "Lifetime spend and order behavior summary for each unique customer"
+    columns:
+      - name: customer_unique_id
+        description: "Unique identifier across all orders by a customer"
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_city
+        description: "City of the customer"
+
+      - name: first_order_date
+        description: "Date of the customer's first purchase"
+        tests:
+          - not_null
+
+      - name: total_orders
+        description: "Total number of completed orders by the customer"
+
+      - name: lifetime_spend
+        description: "Sum of prices paid by the customer"
+
+      - name: is_repeat_customer
+        description: "Flag: 1 if customer placed more than 1 order; else 0"
+
+  - name: quarterly_new_customers
+    description: "Count of first-time customers per quarter"
+    columns:
+      - name: first_order_quarter
+        description: "Quarter in which the customer made their first purchase"
+        tests:
+          - not_null
+
+      - name: new_customers
+        description: "Number of unique customers who ordered for the first time that quarter"
+
+  - name: customer_order_behavior_monthly
+    description: "Monthly breakdown of repeat behavior and order completion"
+    columns:
+      - name: order_month
+        description: "Month of order"
+        tests:
+          - not_null
+      - name: total_orders
+        description: "Total number of orders placed"
+      - name: repeat_orders
+        description: "Number of orders placed by repeat customers"
+      - name: completed_orders
+        description: "Number of delivered (completed) orders"
+      - name: repeat_customer_spend
+        description: "Total spend by repeat customers"
+      - name: new_customer_spend
+        description: "Total spend by new customers"
+
+  - name: top_categories_by_volume
+    description: "Monthly ranking of product categories by order volume"
+    columns:
+      - name: order_month
+        description: "Month of the order"
+        tests:
+          - not_null
+      - name: category
+        description: "English-translated product category"
+      - name: order_count
+        description: "Number of orders in the category for the given month"
+
+  - name: customer_experience_summary
+    description: "Monthly customer satisfaction and fulfilment performance"
+    columns:
+      - name: order_month
+        description: "Month of order"
+        tests:
+          - not_null
+      - name: total_reviews
+        description: "Number of reviews received"
+      - name: satisfied_reviews
+        description: "Reviews with score >= 4"
+      - name: satisfaction_rate
+        description: "Proportion of satisfied reviews"
+      - name: avg_fulfilment_days
+        description: "Avg days between purchase and delivery"
+
+  - name: review_score_by_category
+    description: "Monthly average review scores by product category"
+    columns:
+      - name: order_month
+        description: "Month of order"
+      - name: category
+        description: "English-translated product category"
+      - name: avg_review_score
+        description: "Avg score for all reviews in this category"

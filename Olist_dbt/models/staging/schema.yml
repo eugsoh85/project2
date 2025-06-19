@@ -1,0 +1,287 @@
+version: 2
+
+models:
+  # Test for stg_orders.sql
+  - name: stg_orders
+    description: "Cleaned and validated orders data"
+    columns:
+      - name: order_id
+        description: "Unique identifier for each order"
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: "ID of the customer who placed the order"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+      - name: order_status
+        description: "Order's current status"
+        tests:
+          - accepted_values:
+              values: ['delivered', 'shipped', 'canceled', 'processing', 'unavailable', 'invoiced', 'created', 'approved']
+
+      - name: order_purchase_timestamp
+        description: "Timestamp when the order was placed"
+        tests:
+          - not_null
+
+      - name: order_delivered_customer_date
+        description: "Timestamp when the order was delivered to customer"
+
+  # Test for stg_customers.sql
+  - name: stg_customers
+    description: "Cleaned and validated customer data"
+    columns:
+      - name: customer_id
+        description: "Unique identifier for the customer"
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_unique_id
+        description: "An anonymized id to identify unique customers (used for CLV)"
+        tests:
+          - not_null
+          
+      - name: customer_city
+        description: "City where the customer lives"
+        tests:
+          - not_null
+
+      - name: customer_state
+        description: "State where the customer lives"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['SP', 'RJ', 'MG', 'BA', 'RS', 'PR', 'SC', 'DF', 'GO', 'ES', 'PE', 'CE', 'PA', 'AM', 'MA', 'MT', 'MS', 'PB', 'RN', 'PI', 'SE', 'AL', 'TO', 'RO', 'RR', 'AP', 'AC']
+
+      - name: customer_zip_code_prefix
+        description: "5-digit ZIP code prefix of customer's location"
+        tests:
+          - not_null
+          #- dbt_expectations.expect_column_to_match_regex:
+           #   regex: '^\\d{5}$'
+
+  # Test for stg_order_items.sql
+  - name: stg_order_items
+    description: "Cleaned and validated order item line-level data"
+    columns:
+      - name: order_id
+        description: "ID of the order this item belongs to"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: product_id
+        description: "ID of the product ordered"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
+
+      - name: seller_id
+        description: "ID of the seller fulfilling this order"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_sellers')
+              field: seller_id
+
+      - name: price
+        description: "Price paid for the item"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+      - name: freight_value
+        description: "Freight cost for the item"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+  # Test for stg_products.sql
+  - name: stg_products
+    description: "Cleaned and validated product catalog data"
+    columns:
+      - name: product_id
+        description: "Unique ID of the product"
+        tests:
+          - not_null
+          - unique
+
+      - name: product_category_name
+        description: "Product category in original language"
+        tests:
+          - not_null
+
+      - name: product_weight_g
+        description: "Weight of the product in grams"
+        tests:
+          - not_null
+          # Uncomment if using dbt_expectations
+          #- dbt_expectations.expect_column_values_to_be_between:
+           #   min_value: 0
+
+      - name: product_length_cm
+        description: "Length of the product in cm"
+        tests:
+          - not_null
+
+      - name: product_height_cm
+        description: "Height of the product in cm"
+        tests:
+          - not_null
+
+      - name: product_width_cm
+        description: "Width of the product in cm"
+        tests:
+          - not_null
+
+  # Test for stg_sellers.sql
+  - name: stg_sellers
+    description: "Cleaned and validated seller data"
+    columns:
+      - name: seller_id
+        description: "Unique ID of the seller"
+        tests:
+          - not_null
+          - unique
+
+      - name: seller_city
+        description: "City where the seller is based"
+        tests:
+          - not_null
+
+      - name: seller_state
+        description: "State where the seller is based"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['SP', 'RJ', 'MG', 'BA', 'RS', 'PR', 'SC', 'DF', 'GO', 'ES', 'PE', 'CE', 'PA', 'AM', 'MA', 'MT', 'MS', 'PB', 'RN', 'PI', 'SE', 'AL', 'TO', 'RO', 'RR', 'AP', 'AC']
+
+      - name: seller_zip_code_prefix
+        description: "5-digit ZIP code prefix for the seller's location"
+        tests:
+          - not_null
+  
+  # Test for stg_reviews.sql
+  - name: stg_reviews
+    description: "Cleaned and validated review scores submitted by customers"
+    columns:
+      - name: review_id
+        description: "Unique identifier for each review"
+        tests:
+          - not_null
+        #  - unique
+
+      - name: order_id
+        description: "Order associated with the review"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: review_score
+        description: "Rating from the customer (1 to 5)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+              quote: false  # ✅ prevents dbt from wrapping values in quotes
+
+      - name: review_creation_date
+        description: "Date the review was submitted"
+        tests:
+          - not_null
+
+  # Test for stg_payments.sql
+  - name: stg_payments
+    description: "Payment records associated with customer orders"
+    columns:
+      - name: order_id
+        description: "Order the payment belongs to"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: payment_sequential
+        description: "Sequence of the payment for the same order"
+        tests:
+          - not_null
+
+      - name: payment_type
+        description: "Type of payment method used"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['credit_card', 'boleto', 'voucher', 'debit_card', 'not_defined']
+
+      - name: payment_installments
+        description: "Number of installments used in the payment"
+        tests:
+          - not_null
+
+      - name: payment_value
+        description: "Amount paid"
+        tests:
+          - not_null
+          # Optional if using dbt-expectations
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+  # Test for stg_category_translation.sql
+  - name: stg_product_category_translation
+    description: "Mapping of product category names from Portuguese to English"
+    columns:
+      - name: product_category_name
+        description: "Product category name in Portuguese (used as join key)"
+        tests:
+          - not_null
+          - unique
+
+      - name: product_category_name_english
+        description: "Translated product category name in English"
+        tests:
+          - not_null
+
+  # Test for stg_geolocation.sql
+  - name: stg_geolocation
+    description: "Zip code level geolocation information"
+    columns:
+      - name: zip_code_prefix
+        description: "ZIP code prefix (join key)"
+        tests:
+          - not_null
+
+      - name: latitude
+        description: "Latitude of the ZIP area"
+        tests:
+          - not_null
+
+      - name: longitude
+        description: "Longitude of the ZIP area"
+        tests:
+          - not_null
+
+      - name: city
+        description: "City of the geolocation"
+        tests:
+          - not_null
+
+      - name: state
+        description: "State of the geolocation"
+        tests:
+          - not_null

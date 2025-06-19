@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: raw
+    database: sonic-verbena-461903-e8 # ✅ your actual GCP project ID
+    schema: olist_dataset             # ✅ your actual dataset
+    tables:
+      - name: olist_orders_dataset
+      - name: olist_customers_dataset
+      - name: olist_order_payments_dataset
+      - name: olist_order_items_dataset
+      - name: olist_products_dataset
+      - name: olist_sellers_dataset
+      - name: product_category_name_translation
+      - name: olist_order_reviews_dataset
+      - name: olist_geolocation_dataset

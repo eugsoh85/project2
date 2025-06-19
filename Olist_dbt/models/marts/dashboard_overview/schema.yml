@@ -1,0 +1,88 @@
+version: 2
+
+models:  
+  - name: kpi_sales_summary
+    description: "Monthly total revenue, total orders, and average order value"
+    columns:
+      - name: order_month
+        description: "Month of order purchase"
+        tests:
+          - not_null
+      - name: total_orders
+        description: "Total number of completed orders"
+      - name: total_revenue
+        description: "Total revenue (sum of payment_value)"
+      - name: avg_order_value
+        description: "Revenue ÷ Total Orders"
+  - name: kpi_ontime_delivery
+    description: "Monthly on-time delivery percentage"
+    columns:
+      - name: order_month
+        description: "Month of order purchase"
+        tests:
+          - not_null
+      - name: total_delivered
+        description: "Number of delivered orders that have estimated and actual delivery dates"
+      - name: ontime_delivered
+        description: "Number of orders delivered on or before the estimated delivery date"
+      - name: ontime_delivery_pct
+        description: "Percentage of on-time deliveries"
+  - name: kpi_review_scores
+    description: "Monthly average customer review score and review volume"
+    columns:
+      - name: order_month
+        description: "Month of order associated with the review"
+        tests:
+          - not_null
+      - name: avg_review_score
+        description: "Average review score for the month"
+      - name: total_reviews
+        description: "Number of reviews received in the month"      
+  - name: sales_by_state_month
+    description: "Monthly total revenue by customer state"
+    columns:
+      - name: order_month
+        description: "Month of order"
+      - name: customer_state
+        description: "Brazilian state of customer"
+      - name: total_revenue
+        description: "Sum of payment values for orders from this state and month"
+  - name: sales_by_category
+    description: "Total sales value grouped by product category and month"
+    columns:
+      - name: order_month
+        description: "Month of purchase"
+        tests:
+          - not_null
+      - name: category
+        description: "English name of the product category"
+        tests:
+          - not_null
+      - name: total_sales
+        description: "Sum of item prices for the category and month"  
+  - name: payment_method_breakdown
+    description: "Total payments grouped by payment type and month"
+    columns:
+      - name: order_month
+        description: "Month of order"
+        tests:
+          - not_null
+      - name: payment_type
+        description: "Payment method used (e.g., credit_card, boleto)"
+        tests:
+          - not_null
+      - name: total_payment
+        description: "Sum of payments for that method in the given month" 
+  - name: delivery_punctuality_month
+    description: "Count of on-time vs late deliveries per month"
+    columns:
+      - name: order_month
+        description: "Month of order"
+        tests:
+          - not_null
+      - name: delivery_status
+        description: "'on_time' or 'late' depending on delivery performance"
+        tests:
+          - not_null
+      - name: order_count
+        description: "Number of orders that fall into each delivery status category"     

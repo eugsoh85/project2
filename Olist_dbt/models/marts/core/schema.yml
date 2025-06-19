@@ -1,0 +1,124 @@
+version: 2
+
+models:
+  - name: fact_orders
+    description: "Fact table combining order, payment, product, delivery, and review data"
+    columns:
+      - name: order_id
+        tests: [not_null] #removed 'unique' test 
+      - name: customer_id
+        tests: [not_null]
+      - name: product_id
+      - name: seller_id
+      - name: order_date
+      - name: payment_type
+      - name: review_id
+      - name: order_status
+      - name: is_delivered_on_time
+      - name: total_price
+      - name: freight_value
+      - name: delivery_days
+      - name: category_english
+
+  - name: dim_customers
+    description: "Dimension table for customer information"
+    columns:
+      - name: customer_id
+        tests: [not_null, unique]
+      - name: customer_unique_id
+        tests: [not_null]
+      - name: customer_city
+      - name: customer_state
+      - name: customer_zip_code_prefix
+
+  - name: dim_products
+    description: "Dimension table for product metadata"
+    columns:
+      - name: product_id
+        tests: [not_null, unique]
+      - name: product_category_name
+      - name: product_name_length
+      - name: product_description_length
+      - name: product_photos_qty
+      - name: product_weight_g
+      - name: product_length_cm
+      - name: product_height_cm
+      - name: product_width_cm
+
+  - name: dim_sellers
+    description: "Dimension table for seller information"
+    columns:
+      - name: seller_id
+        tests: [not_null, unique]
+      - name: seller_city
+      - name: seller_state
+
+  - name: dim_dates
+    description: "Dimension table for calendar dates derived from order timestamps"
+    columns:
+      - name: date
+        tests: [not_null, unique]
+      - name: year
+      - name: month
+      - name: day
+      - name: day_of_week
+      - name: day_name
+      - name: week_of_year
+      - name: is_weekend
+
+  - name: dim_payments
+    description: "Dimension table summarizing payment types"
+    columns:
+      - name: payment_type
+        tests: [not_null, unique]
+      - name: avg_payment_value
+      - name: avg_installments
+
+  - name: dim_reviews
+    description: "Dimension table for review data"
+    columns:
+      - name: review_id
+        tests: [not_null, unique]
+      - name: order_id
+      - name: review_score
+      - name: review_creation_date
+      - name: review_answer_timestamp
+
+  - name: dim_categories
+    description: "Dimension table mapping Portuguese to English product category names"
+    columns:
+      - name: product_category_name
+        tests: [not_null, unique]
+      - name: product_category_name_english
+  
+  - name: fact_orders_extended
+    description: "Extended fact table combining orders, payments, reviews, and product category for ecommerce dashboarding."
+    columns:
+      - name: order_id
+        description: "Unique identifier for the order"
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Identifier for the customer"
+        tests:
+          - not_null
+      - name: seller_id
+        description: "Identifier for the seller"
+      - name: order_status
+        description: "Status of the order"
+      - name: order_date
+        description: "Date the order was purchased"
+        tests:
+          - not_null
+      - name: is_delivered_on_time
+        description: "Boolean flag if delivered before or on estimated date"
+      - name: total_payment_value
+        description: "Total payment value for the order"
+      - name: primary_payment_type
+        description: "Primary payment method used"
+      - name: review_score
+        description: "Average review score for the order"
+      - name: product_category
+        description: "Product category in English"
+

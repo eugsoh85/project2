@@ -1,0 +1,18 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+
+# Installer files
+*.egg-info/
+*.log
+
+# Dagster temp
+.tmp_dagster_home_*/
+
+# Python env
+.venv/
+env/
+
+*.DS_Store
+meltano-ingest-olist/plugins/extractors/tap-csv--meltanolabs.lock
+meltano-ingest-olist/plugins/loaders/target-bigquery--*.lock
