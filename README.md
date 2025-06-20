@@ -1,15 +1,15 @@
-# End-to-End Data Pipeline for E-commerce Analytics
+# End-to-End Data Pipeline for Brazil E-Commerce OLIST Project
 
 Module 2 Assignment Project - ELT Pipeline with Meltano, dbt, and Dagster
 
 ## Overview
 
-This project implements a comprehensive end-to-end data pipeline and analysis workflow for an e-commerce company using the Olist Brazilian E-commerce dataset. The pipeline follows the modern ELT (Extract, Load, Transform) approach, extracting raw data from CSV files, loading them into BigQuery data warehouse, transforming the data using dbt, orchestrating the workflow with Dagster, and conducting analysis in Python.
+This project implements a comprehensive end-to-end data pipeline and analysis workflow using **Meltano**, **dbt**, and **BigQuery** to transform raw data from the Brazilian E-Commerce Public Dataset (Olist) into clean, business-ready insights, and orchestrating the automated workflow with Dagster. The outputs power purpose-built dashboards in **Looker Studio** as well as in-depth **EDA Analysis** within Jupyter Notebook environment.
 
 ## Architecture
 
 ```
-Raw CSV Data → Meltano (Extract & Load) → BigQuery → dbt (Transform) → Dagster (Orchestrate) → Analysis
+Raw CSV Data → Meltano (Extract & Load) → BigQuery → dbt (Staging → Core → Marts) → Dagster (Orchestrate) → Looker Studio (BI Dashboard) -> EDA Analysis
 ```
 
 ## Tech Stack
@@ -18,6 +18,7 @@ Raw CSV Data → Meltano (Extract & Load) → BigQuery → dbt (Transform) → D
 - **Data Warehouse**: Google BigQuery
 - **Transform**: dbt (data build tool)
 - **Orchestration**: Dagster
+- **BI Dashboard**: Looker Studio
 - **Analysis**: Python with Jupyter notebooks
 - **Version Control**: Git
 
@@ -89,7 +90,7 @@ Raw CSV Data → Meltano (Extract & Load) → BigQuery → dbt (Transform) → D
    - Extractor: `tap-csv` for reading CSV files
    - Loader: `target-bigquery` for loading to BigQuery
    - Source files: Olist e-commerce dataset CSVs
-   - Target: BigQuery project `meltano-learn-2025`, dataset `project`
+   - Target: BigQuery project [GCP Project ID], dataset `olist_dataset`
 
 3. **Run data ingestion:**
    ```bash
@@ -166,9 +167,14 @@ Raw CSV Data → Meltano (Extract & Load) → BigQuery → dbt (Transform) → D
 
 **Purpose**: Clean, standardize, and model data for analytics
 
-#### Staging Models (Data Cleaning)
+### 2.1 Staging Models (Data Cleaning)
 Location: `dbt_project/models/staging/`
+- Cleaned and casted raw data types
+- Filled blanks/nulls
+- Applied deduplication
+- Transformed localized values (e.g., Portuguese → English)
 
+Examples:
 - **`stg_customers.sql`**: Clean customer data with standardized locations
 - **`stg_order_items.sql`**: Clean order items with validated prices
 - **`stg_order_payments.sql`**: Clean payment data
@@ -182,7 +188,51 @@ Location: `dbt_project/models/staging/`
 - State code validations
 - Price range validations
 
-#### Data Marts (Analytics-Ready Tables)
+### 2.2 Finalized Core Star Schema Models
+
+The project follows a clean **star schema** with `fact_orders` at the center, surrounded by descriptive dimension tables. This schema is defined and confirmed in the `brazil_olist_star_schema.dbml` file.
+
+##### 🌟 Fact Table
+
+- `fact_orders.sql` combines key metrics:
+  - Order metadata: status, timestamps
+  - Item-level: product, seller, price, freight
+  - Delivery calculations: delivery days, on-time flag
+  - Payment method
+  - Review score
+
+##### 📐 Dimension Tables
+
+- `dim_customers.sql`: Location, city, state, zip code
+- `dim_products.sql`: Product category, name, measurements
+- `dim_sellers.sql`: Seller region metadata
+- `dim_dates.sql`: Unified date spine
+- `dim_reviews.sql`: Review score and comment data
+- `dim_categories.sql`: Product category names in English
+- `dim_payments.sql`: Payment type lookup
+
+All dimensions connect cleanly via foreign keys to `fact_orders`, ensuring:
+- Single grain: one row per order item
+- Fully denormalized context for Looker Studio
+
+
+### 2.3 Testing & Model Iteration
+
+#### 🚧 Model Prototypes Tested
+We experimented with multiple fact model designs:
+1. **fact_customers** – aggregated by user for CLV and cohort metrics
+2. **fact_reviews** – used for deep dive into review analysis
+3. **fact_orders_v1** – dense joins of all data; suffered performance lags
+4. **fact_orders_final** – slimmed down, normalized by grain, used dimension joins
+
+#### ✅ Final Schema Selection: Justification
+- **Clarity**: Clean separation of dimensions keeps metrics reusable
+- **Performance**: Lightweight joins optimized for Looker Studio
+- **Scalability**: Easily extendable for new dimensions (e.g., promo data)
+- **Integrity**: Central `fact_orders` ensures consistency across all views
+
+
+### 3. Data Marts (Dashboard Models & Analytics-Ready Tables)
 Location: `dbt_project/models/marts/`
 
 - **`fact_orders.sql`**: Central fact table combining orders, items, payments, and customers
@@ -190,7 +240,41 @@ Location: `dbt_project/models/marts/`
 - **`dim_products.sql`**: Product dimension table
 - **`dim_dates.sql`**: Date dimension table
 
-### 3. Orchestration (Dagster)
+#### Customer 360 Dashboard
+
+| Layer | Metrics/Charts | Model |
+|-------|----------------|--------|
+| Demographics | Total Customers, YOY Growth, CLV | `customer_360_summary.sql` |
+| Order Behaviour | Completed Orders, Repeat Spend | `customer_orders_summary.sql` |
+| Experience | Fulfillment Days, Satisfaction | `customer_experience_summary.sql` |
+
+#### E-commerce Overview Dashboard
+
+| Layer | Metrics/Charts | Model |
+|-------|----------------|--------|
+| KPI | Revenue, AOV, On-Time % | `kpi_sales_summary.sql`, `kpi_review_scores.sql` |
+| Sales Outlook | Revenue Trends by State/Month | `sales_by_state.sql`, `sales_summary_by_month.sql` |
+| Trending | Category Sales, Payment Breakdown | `category_sales_summary.sql`, `delivery_timeliness_summary.sql` |
+
+#### ✅ dbt Testing & Expectations
+
+- Used `dbt-expectations` for assertions:
+  - Range testing for freight/price
+  - Column presence
+  - Row uniqueness
+- Manual checks:
+  - Date consistency
+  - On-time logic (SAFE_DIVIDE edge cases)
+
+#### 🧠 Modeling Best Practices
+
+- Each metric calculated at dbt layer, not Looker
+- All timestamps cast and normalized
+- Join keys cleaned (lowercase, trimmed)
+- Review scores deduplicated
+- Cities standardized (e.g., `ribeirao preto` → `Ribeirao Preto`)
+
+### 4. Orchestration (Dagster)
 
 **Purpose**: Orchestrate the dbt transformation pipeline with proper dependencies
 
@@ -205,7 +289,7 @@ Location: `dbt_project/models/marts/`
 run_dbt_staging → run_dbt_tests → run_dbt_marts
 ```
 
-### 4. Analysis (Python)
+### 5. Analysis (Python)
 
 **Purpose**: Perform business analytics and generate insights
 
@@ -249,6 +333,7 @@ run_dbt_staging → run_dbt_tests → run_dbt_marts
 - Failed tests stop the pipeline execution
 - Comprehensive logging for debugging
 
+
 ## Running the Complete Pipeline
 
 ### Option 1: Manual Execution
@@ -263,7 +348,11 @@ dbt run --select path:models/staging/
 dbt test --select path:models/staging/
 dbt run --select path:models/marts/
 
-# 3. Run analysis
+# 3. Refresh BI dashboards
+https://lookerstudio.google.com/reporting/6bc1d14d-ad4d-4c80-8fdb-4185c7009335
+https://lookerstudio.google.com/reporting/d4ae5458-656c-4df2-8329-34a251bea08e
+
+# 4. Run analysis
 cd ../notebooks
 jupyter notebook clv_analysis.ipynb
 ```
